@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AeroPack — Prototipo Pick & Pack</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6fbff;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --primary:#0f62fe; /* azul rey */
+      --accent:#0b8bff;
+      --success:#10b981;
+      --danger:#ef4444;
+      --glass: rgba(255,255,255,0.6);
+      --radius:14px;
+      --shadow: 0 8px 22px rgba(12,18,35,0.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background: linear-gradient(180deg,#f6fbff 0%, #eef7ff 100%);
+      color:#0b1220;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:28px;
+    }
+
+    .app {
+      max-width:1100px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:24px;
+      align-items:start;
+    }
+
+    /* Left column - workflow */
+    .panel {
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+    .brand {
+      display:flex; gap:12px; align-items:center; margin-bottom:18px;
+    }
+    .logo {
+      width:48px; height:48px; border-radius:10px;
+      background:linear-gradient(135deg,var(--primary),var(--accent));
+      display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700;
+      box-shadow: 0 6px 18px rgba(11,139,255,0.18);
+    }
+    h1{font-size:18px;margin:0}
+    p.lead{margin:6px 0 0;color:var(--muted);font-size:13px}
+
+    .card-block { margin-top:12px; display:flex; flex-direction:column; gap:12px }
+    label.small { font-size:12px; color:var(--muted); display:block; margin-bottom:6px }
+
+    .input-row { display:flex; gap:8px; }
+    input[type="text"]{
+      flex:1; padding:12px 14px; border-radius:10px; border:1px solid #e6eefc; outline:none;
+      background:linear-gradient(180deg,#fff,#fbfdff);
+      font-size:14px;
+    }
+    .btn {
+      padding:10px 14px; background:linear-gradient(180deg,var(--primary),var(--accent));
+      color:#fff; border:0; border-radius:10px; cursor:pointer; font-weight:600; font-size:14px;
+      box-shadow: 0 6px 18px rgba(11,139,255,0.12);
+    }
+    .btn.ghost { background:transparent; color:var(--primary); border:1px solid rgba(11,139,255,0.12); box-shadow:none }
+
+    .spec {
+      display:flex; gap:12px; align-items:center; padding:12px; border-radius:10px;
+      background:linear-gradient(180deg,rgba(15,98,254,0.04),rgba(11,139,255,0.02));
+      border:1px dashed rgba(11,139,255,0.06)
+    }
+    .spec h3{margin:0;font-size:15px}
+    .meta{color:var(--muted);font-size:12px}
+
+    /* Checklist */
+    .checklist { margin-top:8px; display:grid; gap:10px }
+    .item {
+      display:flex; align-items:center; gap:12px; padding:12px; border-radius:10px;
+      background: #fbfdff; border:1px solid #eef6ff;
+    }
+    .item .left { width:48px; height:48px; border-radius:8px; background:linear-gradient(180deg,#fff,#f6fbff); display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--primary)}
+    .item .info { flex:1 }
+    .item .info b { display:block }
+    .item .actions { display:flex; gap:8px; align-items:center }
+    .small-tag { font-size:12px;color:var(--muted) }
+
+    .progress {
+      height:12px; background:#eef6ff; border-radius:999px; overflow:hidden;
+      margin-top:10px;
+    }
+    .progress > i { display:block; height:100%; background:linear-gradient(90deg,var(--primary),var(--accent)); width:0%; }
+
+    .sim-controls { display:flex; gap:8px; margin-top:8px; }
+
+    /* Right column - preview & dashboard */
+    .preview {
+      min-height:600px;
+      display:flex; flex-direction:column; gap:14px;
+    }
+    .screen {
+      background:linear-gradient(180deg,#ffffff, #fbfdff);
+      border-radius:16px; padding:18px; box-shadow:var(--shadow);
+      flex:1; display:flex; flex-direction:column;
+    }
+    .screen h2 { margin:0; font-size:16px }
+    .stage {
+      display:grid; grid-template-columns: 1fr 340px; gap:16px; margin-top:14px;
+    }
+    .live-view {
+      background: linear-gradient(180deg,#fbfdff,#f7fbff);
+      padding:14px; border-radius:12px; border:1px solid #eef6ff; min-height:320px;
+      display:flex; flex-direction:column; gap:12px;
+    }
+    .camera {
+      flex:1; display:flex; align-items:center; justify-content:center; border-radius:10px;
+      border:1px dashed #dfeeff; position:relative; overflow:hidden; background:#fff;
+    }
+    .camera .frame { width:100%; height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px; color:var(--muted) }
+    .camera .detected { padding:8px 12px; border-radius:999px; background:rgba(16,185,129,0.08); color:var(--success); font-weight:600; border:1px solid rgba(16,185,129,0.12); }
+    .camera .alert { padding:8px 12px; border-radius:999px; background:rgba(239,68,68,0.06); color:var(--danger); font-weight:600; border:1px solid rgba(239,68,68,0.08); }
+
+    .dashboard {
+      padding:12px; border-radius:10px; background:linear-gradient(90deg,#fff,#fbfdff); border:1px solid #eef6ff;
+    }
+    .stat { display:flex; gap:10px; align-items:center; margin-bottom:8px }
+    .stat .num { font-weight:700; font-size:20px }
+    .stat .label { color:var(--muted); font-size:13px }
+
+    /* footer controls */
+    .footer {
+      display:flex; align-items:center; justify-content:space-between; margin-top:12px; gap:12px;
+    }
+    .points { display:flex; gap:8px; align-items:center; padding:8px 12px; border-radius:999px; background:linear-gradient(90deg,#fff,#f6fbff); border:1px solid #eef6ff}
+    .badge { font-weight:700; color:var(--primary) }
+    .toggle { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--muted) }
+
+    /* responsive */
+    @media (max-width:980px){
+      .app { grid-template-columns: 1fr; padding-bottom:80px }
+      .stage { grid-template-columns: 1fr; }
+      .preview { order: -1; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <!-- LEFT: Controls & Checklist -->
+    <div class="panel" aria-hidden="false">
+      <div class="brand">
+        <div class="logo">AP</div>
+        <div>
+          <h1>AeroPack — Prototipo</h1>
+          <p class="lead">Simula el pick & pack: escanea un vuelo, arma un cajón y detecta errores al instante.</p>
+        </div>
+      </div>
+
+      <div class="card-block">
+        <div>
+          <label class="small">Escanear / introducir código de vuelo</label>
+          <div class="input-row">
+            <input id="flightCode" type="text" placeholder="Ej: AMX1234 / VUELO-A1" value="AMX1234">
+            <button class="btn" id="btnLoad">Cargar</button>
+          </div>
+        </div>
+
+        <div id="specCard" class="spec" style="display:none">
+          <div>
+            <h3 id="specTitle">Vuelo AMX1234</h3>
+            <div class="meta" id="specMeta">Economy • 120 pax • 12 cajones</div>
+          </div>
+          <div style="margin-left:auto; text-align:right;">
+            <div class="small-tag">Estado</div>
+            <div id="specState" style="font-weight:700;color:var(--muted)">Listo</div>
+          </div>
+        </div>
+
+        <div id="checklistWrap" style="display:none">
+          <label class="small">Guía de armado</label>
+          <div id="checklist" class="checklist"></div>
+
+          <div class="progress" aria-hidden="true" title="Progreso">
+            <i id="progressFill" style="width:0%"></i>
+          </div>
+
+          <div class="sim-controls">
+            <button id="btnValidate" class="btn ghost">Validación IA</button>
+            <button id="btnReset" class="btn ghost">Reiniciar</button>
+            <button id="btnComplete" class="btn">Marcar verificado</button>
+          </div>
+
+          <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+            <div class="toggle">
+              <input id="toggleRandom" type="checkbox" checked> <label for="toggleRandom">Validación aleatoria</label>
+            </div>
+            <div style="margin-left:auto" class="small-tag">Simulación local — sin hardware</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <label class="small">Controles rápidos</label>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button id="btnAddError" class="btn ghost">Simular ítem faltante</button>
+          <button id="btnAddExtra" class="btn ghost">Simular ítem extra</button>
+        </div>
+      </div>
+
+      <div style="margin-top:18px">
+        <label class="small">Registro de actividad</label>
+        <div style="max-height:120px; overflow:auto; padding:8px; border-radius:10px; background:#fbfdff; border:1px solid #eef6ff; font-size:13px" id="log">
+          <div style="color:var(--muted)">Ninguna acción registrada todavía.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Preview & Dashboard -->
+    <div class="preview">
+      <div class="screen">
+        <div style="display:flex; align-items:center; justify-content:space-between">
+          <h2>Vista de simulación</h2>
+          <div style="display:flex; gap:10px; align-items:center">
+            <div class="points"><span style="font-size:13px;color:var(--muted)">Puntos</span><div id="points" class="badge">0</div></div>
+            <button id="btnOpenDash" class="btn ghost">Abrir dashboard</button>
+          </div>
+        </div>
+
+        <div class="stage">
+          <div class="live-view">
+            <div style="display:flex; align-items:center; justify-content:space-between">
+              <div>
+                <div style="font-size:13px;color:var(--muted)">Cajón actual</div>
+                <div style="font-weight:700" id="drawerLabel">—</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:12px;color:var(--muted)">Estado IA</div>
+                <div id="iaState" class="detected" style="display:none">Verificado</div>
+                <div id="iaAlert" class="alert" style="display:none">Falta: Agua</div>
+              </div>
+            </div>
+
+            <div class="camera" id="cameraView" aria-hidden="false">
+              <div class="frame" id="cameraFrame">
+                <svg width="92" height="92" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="1.5" y="4.5" width="21" height="15" rx="2.5" stroke="#cfe6ff" stroke-width="1.4" />
+                  <circle cx="12" cy="11.5" r="3.5" stroke="#cfe6ff" stroke-width="1.4" />
+                </svg>
+                <div style="font-size:13px;color:var(--muted)">Simulación de cámara IA</div>
+                <div style="font-size:12px;color:var(--muted)">Detecta faltantes y orden incorrecto</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:8px">
+              <button id="btnSimPick" class="btn">Simular pickup</button>
+              <button id="btnSimSwap" class="btn ghost">Siguiente cajón</button>
+              <button id="btnShowHints" class="btn ghost">Mostrar sugerencias</button>
+            </div>
+          </div>
+
+          <div class="dashboard">
+            <div style="display:flex; align-items:center; justify-content:space-between">
+              <div>
+                <div class="small-tag">Supervisor</div>
+                <div style="font-weight:700">Panel en vivo</div>
+              </div>
+              <div style="font-size:12px;color:var(--muted)">Planta A • Línea 1</div>
+            </div>
+
+            <div style="height:12px"></div>
+
+            <div class="stat">
+              <div class="num" id="dashProgress">0%</div>
+              <div class="label">Progreso total</div>
+            </div>
+
+            <div class="stat">
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:700" id="dashReady">0</div>
+                <div class="small-tag">Cajones verificados</div>
+              </div>
+              <div style="width:1px;height:36px;background:#eef6ff;margin:0 10px"></div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:700" id="dashErrors">0</div>
+                <div class="small-tag">Errores detectados</div>
+              </div>
+            </div>
+
+            <div style="height:12px"></div>
+            <div style="font-size:13px;color:var(--muted);margin-bottom:8px">Últimas alertas</div>
+            <div id="dashAlerts" style="min-height:80px; max-height:160px; overflow:auto; border-radius:8px; padding:8px; background:#fbfdff; border:1px solid #eef6ff; font-size:13px">
+              <div style="color:var(--muted)">Sin alertas</div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="footer">
+          <div style="font-size:13px;color:var(--muted)">Prototipo interactivo — simula IA y procesos sin hardware.</div>
+          <div>
+            <button id="btnExportReport" class="btn ghost">Exportar reporte (PDF)</button>
+            <button id="btnResetAll" class="btn">Reiniciar todo</button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  /* ====== Datos de ejemplo (specs por vuelo) ====== */
+  const SPECS = {
+    "AMX1234": {
+      title: "AMX1234",
+      meta: "Economy • 120 pax • 12 cajones",
+      drawers: [
+        { id: "C1", items: [
+            { sku: "AGUA", name: "Botella agua 500ml", qty: 2 },
+            { sku: "JUGO", name: "Jugo 250ml", qty: 1 },
+            { sku: "GAL", name: "Galletas pack", qty: 2 },
+            { sku: "SERV", name: "Servicio (cubiertos/servilletas)", qty: 1 },
+          ]
+        },
+        { id: "C2", items: [
+            { sku: "AGUA", name: "Botella agua 500ml", qty: 3 },
+            { sku: "CERVE", name: "Cerveza 330ml", qty: 1 },
+            { sku: "SNK", name: "Snacks", qty: 3 },
+            { sku: "SERV", name: "Servicio (cubiertos/servilletas)", qty: 1 },
+          ]
+        }
+      ]
+    },
+    "VUELO-A1": {
+      title: "VUELO-A1",
+      meta: "Business • 40 pax • 4 cajones",
+      drawers: [
+        { id: "B1", items: [
+            { sku: "AGUA", name: "Botella agua 500ml", qty: 2 },
+            { sku: "VINO", name: "Vino 200ml", qty: 1 },
+            { sku: "POST", name: "Postre", qty: 1 }
+          ]
+        }
+      ]
+    }
+  };
+
+  /* ====== Estado del prototipo ====== */
+  let currentSpec = null;
+  let currentDrawerIndex = 0;
+  let pickedState = {}; // { drawerId: { sku: qtyPicked } }
+  let points = 0;
+  let totalDrawers = 0;
+  let verifiedCount = 0;
+  let errorCount = 0;
+  const logEl = document.getElementById('log');
+
+  function log(msg, type) {
+    const d = document.createElement('div');
+    d.style.padding = '6px 0';
+    d.innerHTML = `<small style="color:${type==='err' ? 'var(--danger)' : 'var(--muted)'}">${new Date().toLocaleTimeString()} — ${msg}</small>`;
+    if (logEl.children[0] && logEl.children[0].innerText.includes('Ninguna acción')) logEl.innerHTML='';
+    logEl.prepend(d);
+  }
+
+  /* ====== UI Helpers ====== */
+  function el(q){ return document.querySelector(q) }
+  function els(q){ return Array.from(document.querySelectorAll(q)) }
+
+  /* ====== Cargar spec ====== */
+  document.getElementById('btnLoad').addEventListener('click', () => {
+    const code = document.getElementById('flightCode').value.trim().toUpperCase();
+    if (!code) return alert('Introduce un código de vuelo');
+    loadSpec(code);
+  });
+
+  function loadSpec(code) {
+    currentSpec = SPECS[code] || null;
+    if (!currentSpec) {
+      // generar spec simple si no existe
+      currentSpec = {
+        title: code,
+        meta: "Especificación generada • 6 cajones",
+        drawers: []
+      };
+      // crear 3 drawers de ejemplo
+      for (let i=1;i<=3;i++){
+        currentSpec.drawers.push({ id: `G${i}`, items: [
+          { sku: "AGUA", name: "Botella agua 500ml", qty: 2 },
+          { sku: "SNK", name: "Snack pack", qty: 2 },
+          { sku: "SERV", name: "Servicio (cubiertos/servilletas)", qty: 1 }
+        ]});
+      }
+    }
+    currentDrawerIndex = 0;
+    pickedState = {};
+    points = 0;
+    verifiedCount = 0;
+    errorCount = 0;
+    totalDrawers = currentSpec.drawers.length;
+    renderSpec();
+    log(`Se cargó la especificación del vuelo ${currentSpec.title}`);
+  }
+
+  function renderSpec() {
+    if (!currentSpec) return;
+    document.getElementById('specCard').style.display = 'flex';
+    document.getElementById('checklistWrap').style.display = 'block';
+    document.getElementById('specTitle').innerText = `Vuelo ${currentSpec.title}`;
+    document.getElementById('specMeta').innerText = currentSpec.meta;
+    document.getElementById('drawerLabel').innerText = currentSpec.drawers[currentDrawerIndex].id;
+    renderChecklist();
+    updateProgress();
+    updateDash();
+  }
+
+  function renderChecklist(){
+    const wrap = document.getElementById('checklist');
+    wrap.innerHTML = '';
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    if (!drawer) return;
+    if (!pickedState[drawer.id]) {
+      pickedState[drawer.id] = {};
+      drawer.items.forEach(it=> pickedState[drawer.id][it.sku] = 0);
+    }
+    drawer.items.forEach((it, idx) => {
+      const item = document.createElement('div');
+      item.className='item';
+      item.innerHTML = `
+        <div class="left">${it.sku[0] || '?'}</div>
+        <div class="info">
+          <b>${it.name}</b>
+          <div class="small-tag">${it.qty} x</div>
+        </div>
+        <div class="actions">
+          <div style="font-weight:700" id="picked-${drawer.id}-${it.sku}">${pickedState[drawer.id][it.sku]}</div>
+          <button class="btn ghost" data-sku="${it.sku}" data-action="dec">-</button>
+          <button class="btn" data-sku="${it.sku}" data-action="inc">+</button>
+        </div>
+      `;
+      wrap.appendChild(item);
+    });
+
+    // attach handlers
+    wrap.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const action = btn.getAttribute('data-action');
+        const sku = btn.getAttribute('data-sku');
+        const drawerId = currentSpec.drawers[currentDrawerIndex].id;
+        if (action === 'inc') {
+          pickedState[drawerId][sku] = (pickedState[drawerId][sku] || 0) + 1;
+        } else {
+          pickedState[drawerId][sku] = Math.max(0, (pickedState[drawerId][sku]||0) - 1);
+        }
+        document.getElementById(`picked-${drawerId}-${sku}`).innerText = pickedState[drawerId][sku];
+        updateProgress();
+      });
+    });
+  }
+
+  /* ====== Simular pickup y next ====== */
+  document.getElementById('btnSimPick').addEventListener('click', ()=>{
+    // auto-increment each required item
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    drawer.items.forEach(it => {
+      pickedState[drawer.id][it.sku] = it.qty;
+    });
+    renderChecklist();
+    log(`Se simuló el pick del cajón ${drawer.id}`);
+  });
+
+  document.getElementById('btnSimSwap').addEventListener('click', ()=>{
+    // siguiente cajon
+    if (!currentSpec) return;
+    if (currentDrawerIndex < currentSpec.drawers.length - 1) {
+      currentDrawerIndex++;
+      document.getElementById('drawerLabel').innerText = currentSpec.drawers[currentDrawerIndex].id;
+      renderChecklist();
+      log(`Cambio a cajón ${currentSpec.drawers[currentDrawerIndex].id}`);
+    } else {
+      alert('No hay más cajones en esta spec');
+    }
+  });
+
+  /* ====== Validación IA (simulada) ====== */
+  document.getElementById('btnValidate').addEventListener('click', runValidation);
+  function runValidation() {
+    if (!currentSpec) return alert('Carga una spec primero');
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    // detect missing / extra or order issues
+    const missing = [];
+    const extra = [];
+    drawer.items.forEach(it=>{
+      const picked = pickedState[drawer.id][it.sku] || 0;
+      if (picked < it.qty) missing.push({ sku: it.sku, need: it.qty - picked, name: it.name });
+      if (picked > it.qty) extra.push({ sku: it.sku, extra: picked - it.qty, name: it.name });
+    });
+
+    // optionally add randomness
+    const randomize = document.getElementById('toggleRandom').checked;
+    if (randomize && Math.random() < 0.18) {
+      // randomly mark one required as missing (to simulate camera detection)
+      const pick = drawer.items[Math.floor(Math.random()*drawer.items.length)];
+      if (!missing.some(m=>m.sku===pick.sku)) missing.push({ sku: pick.sku, need: 1, name: pick.name });
+    }
+
+    // render IA result
+    const iaState = document.getElementById('iaState');
+    const iaAlert = document.getElementById('iaAlert');
+    if (missing.length===0 && extra.length===0) {
+      iaState.style.display='inline-block';
+      iaState.innerText = 'Verificado';
+      iaAlert.style.display='none';
+      verifiedCount++;
+      points += 20;
+      document.getElementById('points').innerText = points;
+      log(`Cajón ${drawer.id} verificado por IA — OK`);
+      // move to next if more drawers
+      setTimeout(()=> {
+        if (currentDrawerIndex < currentSpec.drawers.length -1) {
+          currentDrawerIndex++;
+          document.getElementById('drawerLabel').innerText = currentSpec.drawers[currentDrawerIndex].id;
+          renderChecklist();
+        }
+      }, 700);
+    } else {
+      iaState.style.display='none';
+      iaAlert.style.display='inline-block';
+      const names = missing.length ? missing.map(m=>m.sku).join(', ') : '';
+      iaAlert.innerText = `Faltan: ${names}` + (extra.length ? ` • Exceso: ${extra.map(x=>x.sku).join(',')}` : '');
+      errorCount += missing.length + extra.length;
+      points = Math.max(0, points - (missing.length*5 + extra.length*3));
+      document.getElementById('points').innerText = points;
+      log(`IA detectó errores en ${drawer.id}: faltantes(${names})`);
+      // push alert to dashboard
+      const dashAlerts = document.getElementById('dashAlerts');
+      if (dashAlerts.children[0] && dashAlerts.children[0].innerText.includes('Sin alertas')) dashAlerts.innerHTML='';
+      const a = document.createElement('div');
+      a.style.padding='8px 6px';
+      a.innerHTML = `<b style="color:${missing.length? 'var(--danger)':'var(--primary)'}">${drawer.id}</b> — Faltan: ${names}`;
+      dashAlerts.prepend(a);
+    }
+    updateDash();
+  }
+
+  /* ====== Quick simulate buttons ====== */
+  document.getElementById('btnAddError').addEventListener('click', ()=>{
+    if (!currentSpec) return alert('Carga una spec primero');
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    // remove one from first item
+    const first = drawer.items[0];
+    pickedState[drawer.id][first.sku] = Math.max(0, (pickedState[drawer.id][first.sku]||0)-1);
+    renderChecklist();
+    log(`Se simuló un ítem faltante en ${drawer.id} (${first.sku})`);
+  });
+
+  document.getElementById('btnAddExtra').addEventListener('click', ()=>{
+    if (!currentSpec) return alert('Carga una spec primero');
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    const first = drawer.items[0];
+    pickedState[drawer.id][first.sku] = (pickedState[drawer.id][first.sku]||0) + 1;
+    renderChecklist();
+    log(`Se agregó un ítem extra en ${drawer.id} (${first.sku})`);
+  });
+
+  /* ====== Mark verified (manual) ====== */
+  document.getElementById('btnComplete').addEventListener('click', ()=>{
+    if (!currentSpec) return alert('Carga una spec primero');
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    verifiedCount++;
+    points += 10;
+    document.getElementById('points').innerText = points;
+    log(`Cajón ${drawer.id} marcado como verificado manualmente`);
+    if (currentDrawerIndex < currentSpec.drawers.length -1) {
+      currentDrawerIndex++;
+      document.getElementById('drawerLabel').innerText = currentSpec.drawers[currentDrawerIndex].id;
+      renderChecklist();
+    } else {
+      alert('Todos los cajones completados');
+    }
+    updateDash();
+  });
+
+  /* ====== Reset handlers ====== */
+  document.getElementById('btnReset').addEventListener('click', ()=>{
+    if (!currentSpec) return;
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    drawer.items.forEach(it => pickedState[drawer.id][it.sku] = 0);
+    renderChecklist();
+    document.getElementById('iaState').style.display='none';
+    document.getElementById('iaAlert').style.display='none';
+    log(`Cajón ${drawer.id} reiniciado`);
+  });
+
+  document.getElementById('btnResetAll').addEventListener('click', ()=>{
+    if (!currentSpec) return;
+    if (!confirm('Reiniciar todo el prototipo?')) return;
+    currentSpec = null;
+    currentDrawerIndex = 0;
+    pickedState = {};
+    points = 0;
+    verifiedCount = 0;
+    errorCount = 0;
+    totalDrawers = 0;
+    document.getElementById('specCard').style.display='none';
+    document.getElementById('checklistWrap').style.display='none';
+    document.getElementById('drawerLabel').innerText='—';
+    document.getElementById('points').innerText='0';
+    document.getElementById('log').innerHTML='<div style="color:var(--muted)">Ninguna acción registrada todavía.</div>';
+    document.getElementById('dashAlerts').innerHTML='<div style="color:var(--muted)">Sin alertas</div>';
+    document.getElementById('dashProgress').innerText='0%';
+    document.getElementById('dashReady').innerText='0';
+    document.getElementById('dashErrors').innerText='0';
+    document.getElementById('progressFill').style.width='0%';
+    log('Prototipo reiniciado por usuario');
+  });
+
+  /* ====== Dashboard open (simulación) ====== */
+  document.getElementById('btnOpenDash').addEventListener('click', ()=>{
+    alert('Dashboard en pantalla — esta es una simulación. Usa la columna derecha para ver métricas en vivo.');
+  });
+
+  /* ====== Export report (simulado) ====== */
+  document.getElementById('btnExportReport').addEventListener('click', ()=>{
+    // Generar texto simple y descargar como .txt (simula PDF/export)
+    if (!currentSpec) return alert('Carga una spec primero');
+    const name = `${currentSpec.title}-reporte.txt`;
+    let content = `Reporte de simulación — ${currentSpec.title}\nFecha: ${new Date().toLocaleString()}\n\n`;
+    content += `Cajones totales: ${totalDrawers}\nCajones verificados: ${verifiedCount}\nErrores detectados: ${errorCount}\nPuntos: ${points}\n\nAlertas recientes:\n`;
+    const alerts = document.getElementById('dashAlerts').innerText;
+    content += alerts;
+    const blob = new Blob([content], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    log('Reporte exportado (simulado .txt)');
+  });
+
+  /* ====== Update progress & dashboard ====== */
+  function updateProgress() {
+    if (!currentSpec) return;
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    let totalReq = 0; let totalPicked = 0;
+    drawer.items.forEach(it=> { totalReq += it.qty; totalPicked += (pickedState[drawer.id][it.sku] || 0); });
+    const pct = Math.min(100, Math.round((totalPicked / totalReq) * 100 || 0));
+    document.getElementById('progressFill').style.width = pct + '%';
+    document.getElementById('dashProgress').innerText = `${Math.round(((verifiedCount + (pct/100)) / totalDrawers) * 100)||0}%`;
+  }
+
+  function updateDash() {
+    document.getElementById('points').innerText = points;
+    document.getElementById('dashReady').innerText = verifiedCount;
+    document.getElementById('dashErrors').innerText = errorCount;
+    document.getElementById('dashProgress').innerText = `${Math.min(100, Math.round((verifiedCount / totalDrawers) * 100 || 0))}%`;
+  }
+
+  /* ====== Inicializar con un vuelo por defecto ====== */
+  window.addEventListener('load', () => {
+    loadSpec('AMX1234');
+  });
+
+  /* ====== Mostrar sugerencias (hints) ====== */
+  document.getElementById('btnShowHints').addEventListener('click', ()=>{
+    // Mostrar un pequeño modal estilo alert con tips
+    const drawer = currentSpec.drawers[currentDrawerIndex];
+    let tips = `Consejos para ${drawer.id}:\n\n`;
+    drawer.items.forEach(it => tips += `• ${it.name}: colocar ${it.qty}\n`);
+    alert(tips);
+  });
+
+</script>
+
+</body>
+</html>
